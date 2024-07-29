@@ -17,12 +17,15 @@ export function MediaRoom({ chatId, video, audio }: MediaRoomProps) {
   const [token, setToken] = useState("");
 
   useEffect(() => {
-    if (!user?.firstName) return;
+    let name;
+    if (!user?.firstName) {
+      name = 'you'
+    }
 
     (async () => {
       try {
         const response = await fetch(
-          `/api/livekit?room=${chatId}&username=${user.firstName}`
+          `/api/livekit?room=${chatId}&username=${user?.firstName ? user.firstName : name }`
         );
         const data = await response.json();
         setToken(data.token);
