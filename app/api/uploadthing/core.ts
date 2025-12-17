@@ -1,12 +1,25 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
-import { auth } from "@clerk/nextjs";
+import { cookies } from "next/headers";
+import { jwtVerify } from "jose";
 
 const f = createUploadthing();
 
-const handleAuth = () => {
-  const { userId } = auth();
-  if (!userId) throw new Error("Unauthorized!");
-  return { userId };
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || "your-super-secret-key-change-in-production"
+);
+
+const handleAuth = async () => {
+  const cookieStore = cookies();
+  const token = cookieStore.get("sambad-auth-token")?.value;
+  
+  if (!token) throw new Error("Unauthorized!");
+  
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    return { userId: payload.userId as string };
+  } catch {
+    throw new Error("Unauthorized!");
+  }
 };
 
 export const ourFileRouter = {

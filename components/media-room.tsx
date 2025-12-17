@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from "react";
 import "@livekit/components-styles";
 import { LiveKitRoom, VideoConference } from "@livekit/components-react";
-import { useUser } from "@clerk/nextjs";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/components/providers/auth-provider";
 
 interface MediaRoomProps {
   chatId: string;
@@ -13,27 +13,30 @@ interface MediaRoomProps {
 }
 
 export function MediaRoom({ chatId, video, audio }: MediaRoomProps) {
-  const { user } = useUser();
+  const { user } = useAuth();
   const [token, setToken] = useState("");
 
   useEffect(() => {
-    let name;
-    if (!user?.firstName) {
-      name = 'you'
-    }
+    if (!user?.name) return;
+
+    const name = user.name;
 
     (async () => {
       try {
         const response = await fetch(
-          `/api/livekit?room=${chatId}&username=${user?.firstName ? user.firstName : name }`
+          `/api/livekit?room=${encodeURIComponent(chatId)}&username=${encodeURIComponent(name)}`
         );
         const data = await response.json();
-        setToken(data.token);
+        if (data.token) {
+          setToken(data.token);
+        } else {
+          console.error("Failed to get token:", data.error);
+        }
       } catch (error) {
         console.error(error);
       }
     })();
-  }, [user?.firstName, chatId]);
+  }, [user?.name, chatId]);
 
   if (token === "")
     return (
@@ -53,6 +56,12 @@ export function MediaRoom({ chatId, video, audio }: MediaRoomProps) {
       connect={true}
       serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
       data-lk-theme="default"
+      onDisconnected={() => {
+        console.log("Disconnected from LiveKit room");
+      }}
+      onError={(error) => {
+        console.error("LiveKit error:", error);
+      }}
     >
       <VideoConference />
     </LiveKitRoom>

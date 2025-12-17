@@ -27,14 +27,21 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const at = new AccessToken(apiKey, apiSecret, { identity: username });
+  const at = new AccessToken(apiKey, apiSecret, {
+    identity: username,
+    // Token expires in 1 hour
+    ttl: "1h",
+  });
 
   at.addGrant({
     room,
     roomJoin: true,
     canPublish: true,
-    canSubscribe: true
+    canPublishData: true,
+    canSubscribe: true,
   });
 
-  return NextResponse.json({ token: at.toJwt() });
+  const token = await at.toJwt();
+
+  return NextResponse.json({ token });
 }

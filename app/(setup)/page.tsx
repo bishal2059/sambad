@@ -1,12 +1,28 @@
 import React from "react";
 import { redirect } from "next/navigation";
 
-import { initialProfile } from "@/lib/initial-profile";
+import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { InitialModal } from "@/components/modals/initial-modal";
+import { LandingPage } from "@/components/landing-page";
 
 export default async function SetupPage() {
-  const profile = await initialProfile();
+  const session = await getSession();
+
+  // If not signed in, show landing page
+  if (!session?.userId) {
+    return <LandingPage />;
+  }
+
+  const profile = await db.profile.findUnique({
+    where: {
+      userId: session.userId
+    }
+  });
+
+  if (!profile) {
+    return <LandingPage />;
+  }
 
   const server = await db.server.findFirst({
     where: {
